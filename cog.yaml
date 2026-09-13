@@ -42,18 +42,21 @@ build:
     # Prebuilt wheel matching torch 2.7 / CUDA 12 / CPython 3.11. torch 2.7 pip
     # wheels use the C++11 ABI, hence cxx11abiTRUE. Compiling from source instead
     # takes hours and would blow the CI time limit.
-    - pip install "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.7cxx11abiTRUE-cp311-cp311-linux_x86_64.whl"
+    #
+    # Cog (v0.22) installs Python with uv, so there is no `pip` binary and only
+    # `python3` is on PATH; uv marks that Python as externally managed.
+    - uv pip install --break-system-packages "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.7cxx11abiTRUE-cp311-cp311-linux_x86_64.whl"
 
     # Bake the weights into the image so a cold boot never waits on the Hub.
     # Source code is not available to `run` commands, so these mirror the
     # download targets in download.py rather than calling it.
     - >
-      python -c "from huggingface_hub import hf_hub_download;
+      python3 -c "from huggingface_hub import hf_hub_download;
       [hf_hub_download(repo_id='VAST-AI/SkinTokens', filename=f, local_dir='/src') for f in
       ['experiments/skin_vae_2_10_32768/last.ckpt',
       'experiments/articulation_xl_quantization_256_token_4/grpo_1400.ckpt']]"
     - >
-      python -c "from huggingface_hub import snapshot_download;
+      python3 -c "from huggingface_hub import snapshot_download;
       snapshot_download(repo_id='Qwen/Qwen3-0.6B', local_dir='/src/models/Qwen3-0.6B',
       ignore_patterns=['*.bin', '*.safetensors'])"
 
