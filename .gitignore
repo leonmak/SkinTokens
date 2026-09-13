@@ -99,3 +99,5 @@ coverage.xml
 *.cover
 
 # Project-specific ignores
+# Cog build artifacts
+.cog/
