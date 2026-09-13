@@ -1,0 +1,41 @@
+# Builds the Cog image on an x86 Linux runner and pushes it to Replicate.
+#
+# One-time setup (repo Settings → Secrets and variables → Actions):
+#   - Secret   REPLICATE_API_TOKEN  https://replicate.com/account/api-tokens
+#   - Variable REPLICATE_MODEL      e.g. leonmak/skintokens (create the model on
+#                                   replicate.com first)
+name: Push to Replicate
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: "Replicate model (owner/name). Defaults to the REPLICATE_MODEL variable."
+        required: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      # The CUDA base image, torch and baked-in weights exceed the ~14 GB of free
+      # disk a standard runner starts with.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          docker-images: false
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Cog
+        uses: replicate/setup-cog@v2
+        with:
+          token: ${{ secrets.REPLICATE_API_TOKEN }}
+
+      - name: Push to Replicate
+        env:
+          MODEL: ${{ inputs.model_name || vars.REPLICATE_MODEL }}
+        run: |
+          test -n "$MODEL" || { echo "Set the REPLICATE_MODEL variable or pass model_name"; exit 1; }
+          cog push "r8.im/$MODEL"

@@ -39,12 +39,10 @@ build:
     # attention implementation the Qwen3 backbone is instantiated with, so it is
     # a hard runtime requirement.
     #
-    # It is compiled from source because the ABI of a prebuilt wheel has to match
-    # the exact torch build above; the arch list is trimmed to the Ampere/Hopper
-    # GPUs Replicate runs (flash-attn 2 requires SM 8.0+) to keep the build
-    # tractable. To shorten builds, replace this with the matching prebuilt wheel
-    # from https://github.com/Dao-AILab/flash-attention/releases.
-    - MAX_JOBS=4 TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0" pip install --no-build-isolation flash-attn==2.8.3
+    # Prebuilt wheel matching torch 2.7 / CUDA 12 / CPython 3.11. torch 2.7 pip
+    # wheels use the C++11 ABI, hence cxx11abiTRUE. Compiling from source instead
+    # takes hours and would blow the CI time limit.
+    - pip install "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.7cxx11abiTRUE-cp311-cp311-linux_x86_64.whl"
 
     # Bake the weights into the image so a cold boot never waits on the Hub.
     # Source code is not available to `run` commands, so these mirror the
