@@ -40,4 +40,13 @@ jobs:
           MODEL: ${{ inputs.model_name || vars.REPLICATE_MODEL }}
         run: |
           test -n "$MODEL" || { echo "Set the REPLICATE_MODEL variable or pass model_name"; exit 1; }
-          cog push "r8.im/$MODEL"
+          # r8.im intermittently fails uploads with "unknown blob"
+          # (https://github.com/replicate/cog/issues/3164). The image is already
+          # built and tagged by then, so retry with a plain docker push.
+          cog push "r8.im/$MODEL" && exit 0
+          for attempt in 1 2 3; do
+            echo "Retrying push ($attempt/3)"
+            docker push "r8.im/$MODEL" && exit 0
+            sleep 30
+          done
+          exit 1
