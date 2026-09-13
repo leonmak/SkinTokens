@@ -1,0 +1,27 @@
+# Keep the Cog build context small. Weights are baked into the image by the
+# `run` stanza in cog.yaml, so a local copy of experiments/ or models/ must not
+# be uploaded (or copied over the baked-in ones).
+.git/
+.github/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+assets/
+experiments/
+models/
+results/
+dataset_clean/
+dataset_inference/
+dataset_inference_clean/
+datalist/
+wandb/
+lightning_logs/
+tmp/
+tmp_gradio/
+tmp_ckpt/
+tmp_fusion/
+tmp_vae/
+tmp_video/
+.cog/

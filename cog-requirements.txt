@@ -1,0 +1,40 @@
+# Python dependencies for the Cog image (see cog.yaml).
+#
+# This mirrors requirements.txt, but pins the versions that the Replicate image
+# is built and tested against: the PyTorch build is pinned to the CUDA 12.8
+# wheels the README recommends, and `bpy` is pinned to the last 4.x LTS release
+# that ships a CPython 3.11 wheel (5.1+ is CPython 3.13 only).
+#
+# `gradio` is intentionally omitted: the Cog HTTP API replaces the Gradio UI.
+
+--extra-index-url https://download.pytorch.org/whl/cu128/
+
+# This exact trio is the torch 2.7.0 / CUDA 12.8 combination in Cog's
+# compatibility matrix, which is how Cog picks the CUDA 12.8 base image.
+torch==2.7.0+cu128
+torchvision==0.22.0
+torchaudio==2.7.0
+
+transformers>=4.57.0
+diffusers>=0.35.0
+python-box
+einops
+omegaconf
+lightning
+addict
+fast-simplification
+bpy==4.5.13
+trimesh
+open3d
+huggingface_hub
+numpy>=1.26.0,<3
+bottle
+tornado
+
+# Build dependencies for `pip install flash-attn --no-build-isolation`,
+# which runs from the `build.run` stanza in cog.yaml.
+ninja
+packaging
+psutil
+setuptools
+wheel

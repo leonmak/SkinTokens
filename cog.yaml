@@ -1,0 +1,62 @@
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # TokenRig needs an NVIDIA GPU with >= 14 GB of memory for inference.
+  gpu: true
+
+  # bpy only ships CPython 3.11 wheels for the 4.x LTS line, and the README
+  # targets Python >= 3.11, so the image is pinned to 3.11.
+  python_version: "3.11"
+
+  # Matches the torch 2.7.0+cu128 wheels pinned in cog-requirements.txt.
+  cuda: "12.8"
+
+  system_packages:
+    - "git"
+    - "curl"
+    # Shared libraries bpy (Blender as a Python module) and open3d dlopen,
+    # even when running headless.
+    - "libgl1"
+    - "libegl1"
+    - "libgomp1"
+    - "libsm6"
+    - "libxext6"
+    - "libxrender1"
+    - "libxi6"
+    - "libxxf86vm1"
+    - "libxfixes3"
+    - "libxkbcommon0"
+    - "libxrandr2"
+    - "libxinerama1"
+    - "libxcursor1"
+    - "libdbus-1-3"
+
+  python_requirements: cog-requirements.txt
+
+  run:
+    # flash-attn is imported at module scope by src/model/tokenrig.py and is the
+    # attention implementation the Qwen3 backbone is instantiated with, so it is
+    # a hard runtime requirement.
+    #
+    # It is compiled from source because the ABI of a prebuilt wheel has to match
+    # the exact torch build above; the arch list is trimmed to the Ampere/Hopper
+    # GPUs Replicate runs (flash-attn 2 requires SM 8.0+) to keep the build
+    # tractable. To shorten builds, replace this with the matching prebuilt wheel
+    # from https://github.com/Dao-AILab/flash-attention/releases.
+    - MAX_JOBS=4 TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0" pip install --no-build-isolation flash-attn==2.8.3
+
+    # Bake the weights into the image so a cold boot never waits on the Hub.
+    # Source code is not available to `run` commands, so these mirror the
+    # download targets in download.py rather than calling it.
+    - >
+      python -c "from huggingface_hub import hf_hub_download;
+      [hf_hub_download(repo_id='VAST-AI/SkinTokens', filename=f, local_dir='/src') for f in
+      ['experiments/skin_vae_2_10_32768/last.ckpt',
+      'experiments/articulation_xl_quantization_256_token_4/grpo_1400.ckpt']]"
+    - >
+      python -c "from huggingface_hub import snapshot_download;
+      snapshot_download(repo_id='Qwen/Qwen3-0.6B', local_dir='/src/models/Qwen3-0.6B',
+      ignore_patterns=['*.bin', '*.safetensors'])"
+
+predict: "predict.py:Predictor"

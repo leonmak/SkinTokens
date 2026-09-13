@@ -132,6 +132,53 @@ python demo.py --input examples/ --output results/ --use_transfer
 | `--use_transfer` | False | Transfer original texture and scale |
 | `--use_postprocess` | False | Apply voxel-based skin postprocessing |
 
+### Replicate (Cog)
+
+[`cog.yaml`](cog.yaml) and [`predict.py`](predict.py) package TokenRig as a
+[Cog](https://cog.run) model, so it can be run as a container or deployed to
+[Replicate](https://replicate.com). The image pins Python 3.11, CUDA 12.8 and
+torch 2.7.0, builds flash-attn from source, and bakes both checkpoints plus the
+Qwen3-0.6B config into the image so cold boots do not wait on Hugging Face.
+
+Install [Cog](https://github.com/replicate/cog#install) and Docker, then run the
+model locally on a machine with an NVIDIA GPU:
+
+```sh
+cog predict -i mesh=@examples/giraffe.glb
+cog predict -i mesh=@examples/giraffe.glb -i use_transfer=false -i num_beams=5
+```
+
+To deploy, create a model at [replicate.com/create](https://replicate.com/create),
+then push to it:
+
+```sh
+export REPLICATE_API_TOKEN=<your token>   # from replicate.com/account/api-tokens
+cog login
+cog push r8.im/<your-username>/<your-model-name>
+```
+
+The first build compiles flash-attn and downloads ~2 GB of weights, so expect it
+to take a while. Pick an A100, L40S or H100 instance for the deployed model:
+inference needs at least 14 GB of GPU memory, and flash-attn 2 requires an
+Ampere or newer GPU.
+
+#### API inputs
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `mesh` | *(required)* | Input mesh to rig (`.glb`, `.obj` or `.fbx`) |
+| `use_skeleton` | `false` | Keep the input's existing skeleton, generate skin only |
+| `use_transfer` | `true` | Transfer the rig back onto the original mesh, preserving texture and scale |
+| `use_postprocess` | `false` | Apply voxel-based skin postprocessing |
+| `top_k` | 5 | Top-k sampling |
+| `top_p` | 0.95 | Top-p (nucleus) sampling |
+| `temperature` | 1.0 | Sampling temperature |
+| `repetition_penalty` | 2.0 | Repetition penalty |
+| `num_beams` | 10 | Number of beams for beam search |
+| `seed` | *(random)* | Random seed |
+
+The output is a rigged `.glb`.
+
 ### Troubleshooting
 
 - **Server fails to start**: Make sure `http_proxy` / `https_proxy` environment variables are unset or correctly configured.
