@@ -35,6 +35,10 @@ build:
   python_requirements: cog-requirements.txt
 
   run:
+    # Cog v0.22 labels the finished image by running `python -m pip freeze` in
+    # it, but its CUDA image only links `python3` and has no pip. Provide both.
+    - ln -sf "$(uv python find 3.11)" /usr/bin/python && uv pip install --break-system-packages pip
+
     # flash-attn is imported at module scope by src/model/tokenrig.py and is the
     # attention implementation the Qwen3 backbone is instantiated with, so it is
     # a hard runtime requirement.
